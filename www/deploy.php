@@ -3,25 +3,38 @@ error_reporting(E_ERROR);
 
 const DEPLOY_LOG = "/var/www/deploy-log";
 
-function is_building() {
+function is_building($safe = true) {
   $stopped = shell_exec("sudo pm2 ls | grep \"stopped\" | awk \"{print $4}\"");
-  return $stopped && str_contains($stopped, "ansible");
+  if ($stopped === false || $stopped === null) {
+    if ($safe) {
+      return false;
+    }
+    throw new Exception("Cannot detect building state.");
+  }
+  return str_contains($stopped, "ansible");
 }
 
 if ($_GET["req"] === "ping") {
   header("Content-Type: application/json; charset=UTF-8", true);
 
-  if (is_building()) {
+  try {
+    if (is_building(false)) {
+      $obj = array(
+        "code" => 1,
+        "log" => shell_exec("[ -r \"" . DEPLOY_LOG . "\" ] && cat \"" . DEPLOY_LOG . "\"")
+      );
+    } else {
+      $obj = array(
+        "code" => 0,
+        "log" => file_exists(DEPLOY_LOG) ?
+          fread(fopen(DEPLOY_LOG, "r"), filesize(DEPLOY_LOG)) :
+          "Never run."
+      );
+    }
+  } catch (Exception $e) {
     $obj = array(
-      "code" => 1,
-      "log" => shell_exec("[ -r \"" . DEPLOY_LOG . "\" ] && cat \"" . DEPLOY_LOG . "\"")
-    );
-  } else {
-    $obj = array(
-      "code" => 0,
-      "log" => file_exists(DEPLOY_LOG) ?
-        fread(fopen(DEPLOY_LOG, "r"), filesize(DEPLOY_LOG)) :
-        "Never run."
+      "code" => -1,
+      "log" => $e->getMessage()
     );
   }
 
@@ -34,7 +47,7 @@ if ($_GET["req"] === "ping") {
   } else {
     shell_exec("sudo pm2 delete ansible; sudo unlink \"" . DEPLOY_LOG . "\"");
     exec(
-      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --log \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
+      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --output \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
       $log,
       $started
     );
@@ -280,7 +293,6 @@ if ($_GET["req"] === "ping") {
             break;
           default:
             span.className = 'r';
-            value.log = 'Unknown response code.';
         }
         textarea.value = value.log;
       }).catch(function (reason) {
