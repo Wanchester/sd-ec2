@@ -53,8 +53,9 @@
       shell: "pm2 delete {{ app_name }} -s || :"
 
     - name: Make scripts executable
-      file: "{{ item }}"
-      mode: "0755"
+      file:
+        path: "{{ item }}"
+        mode: "0755"
       with_items:
         - "{{ base_path }}/scripts/front_hash.sh"
         - "{{ base_path }}/scripts/back_hash.sh"
