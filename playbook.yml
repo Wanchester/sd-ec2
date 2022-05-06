@@ -121,10 +121,9 @@
         chdir: "{{ be_repo_path }}"
 
     - name: Create the directory for portal assets
-      file:
-        path: "{{ item.value }}"
-        state: touch
-        mode: "0755"
+      copy:
+        content: ""
+        dest: "{{ item.value }}"
       loop: "{{ lookup('dict', www) }}"
 
     - name: Copy portal assets
@@ -135,10 +134,9 @@
       loop: "{{ lookup('dict', www) }}"
 
     - name: Create the directory for configuration files
-      file:
-        path: "{{ item.value }}"
-        state: touch
-        mode: "0755"
+      copy:
+        content: ""
+        dest: "{{ item.value }}"
       loop: "{{ lookup('dict', conf) }}"
 
     - name: Link configuration files
