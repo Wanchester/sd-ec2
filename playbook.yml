@@ -74,7 +74,7 @@
       copy:
         src: "{{ fe_repo_path }}"
         dest: "{{ www_path }}/html/"
-        remote_src: no
+        remote_src: yes
 
     - name: "Front-end: Record hash"
       shell: "./scripts/front_hash.sh > \"{{ www_path }}/front_hash.txt\""
@@ -111,11 +111,18 @@
       args:
         chdir: "{{ be_repo_path }}"
 
-    - name: Prepare deploy portal assets
+    - name: Create the directory for portal assets
+      file:
+        path: "{{ item.value }}"
+        state: touch
+        moe: "0755"
+      loop: "{{ lookup('dict', www) }}"
+
+    - name: Copy portal assets
       copy:
         src: "{{ item.key }}"
         dest: "{{ item.value }}"
-        remote_src: no
+        remote_src: yes
       loop: "{{ lookup('dict', www) }}"
 
     - name: Create the directory for configuration files
@@ -125,7 +132,7 @@
         mode: "0755"
       loop: "{{ lookup('dict', conf) }}"
 
-    - name: Linking configuration files
+    - name: Link configuration files
       file:
         src: "{{ item.key }}"
         dest: "{{ item.value }}"
