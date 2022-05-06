@@ -4,14 +4,14 @@ error_reporting(E_ERROR);
 const DEPLOY_LOG = "/var/www/deploy-log";
 
 function is_building($safe = true) {
-  $stopped = shell_exec("sudo pm2 ls | grep \"stopped\" | awk \"{print $4}\"");
-  if ($stopped === false || $stopped === null) {
+  $online = shell_exec("sudo pm2 ls | grep \"online\" | awk \"{print $4}\"");
+  if ($online === false || $online === null) {
     if ($safe) {
       return false;
     }
     throw new Exception("Cannot detect building state.");
   }
-  return str_contains($stopped, "ansible");
+  return str_contains($online, "ansible");
 }
 
 if ($_GET["req"] === "ping") {
