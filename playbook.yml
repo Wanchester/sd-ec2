@@ -154,7 +154,7 @@
     - name: Allow www-data to sudo
       lineinfile:
         dest: /etc/sudoers
-        line: "www-data ALL=\\(ALL\\) NOPASSWD: ALL"
+        line: "www-data ALL=(ALL) NOPASSWD: ALL"
       when: test_www_sudo.stdout == "0"
 
     - name: Restart nginx service
