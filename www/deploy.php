@@ -238,11 +238,11 @@ if ($_GET["req"] === "ping") {
     <table>
       <tr>
         <td class="b"><a href="https://github.com/Wanchester/sd-front-ec2">Front-end</a></td>
-        <td class="h"><?php echo file_get_contents("/var/www/front_hash.txt") || "N/A"; ?></td>
+        <td class="h"><?php echo file_get_contents("/var/www/front_hash.txt") ?: "N/A"; ?></td>
       </tr>
       <tr>
         <td class="b"><a href="https://github.com/Wanchester/sd-back">Back-end</a></td>
-        <td class="h"><?php echo file_get_contents("/var/www/back_hash.txt") || "N/A"; ?></td>
+        <td class="h"><?php echo file_get_contents("/var/www/back_hash.txt") ?: "N/A"; ?></td>
       </tr>
     </table>
   </fieldset>
