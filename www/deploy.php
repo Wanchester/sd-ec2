@@ -115,20 +115,19 @@ if ($_GET["req"] === "ping") {
     }
 
     .f table {
-      width: 100%;
+      margin: 0 auto;
       border-collapse: collapse;
     }
 
     .b {
       padding-right: 8px;
       text-align: right;
-      width: 50%;
     }
 
     .h {
       padding-left: 8px;
-      width: 50%;
       font-weight: bold;
+      font-family: monospace;
     }
 
     .s {
@@ -144,7 +143,7 @@ if ($_GET["req"] === "ping") {
     }
 
     .p {
-      color: #187498;
+      color: #0aa1dd;
     }
 
     .p::after {
@@ -160,7 +159,7 @@ if ($_GET["req"] === "ping") {
     }
 
     .i {
-      color: #f9d923;
+      color: #112b3c;
     }
 
     .i::after {
