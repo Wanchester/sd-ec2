@@ -10,13 +10,22 @@
     fe_repo_path: "{{ base_path }}/front/"
     be_repo_url: "https://github.com/Wanchester/sd-back.git"
     be_repo_path: "{{ base_path }}/back/"
-    conf:
-      "{{ base_path }}/conf/nginx.conf": /etc/nginx/nginx.conf
-      "{{ base_path }}/conf/default.conf": /etc/nginx/conf.d/default.conf
-      "{{ base_path }}/conf/www.conf": /etc/php/8.0/fpm/pool.d/www.conf
-    www:
-      "{{ base_path }}/www/.htpasswd": /etc/nginx/.htpasswd
-      "{{ base_path }}/www/deploy.php": /var/www/deploy.php
+    conf_keys:
+      - "{{ base_path }}/conf/nginx.conf"
+      - "{{ base_path }}/conf/default.conf"
+      - "{{ base_path }}/conf/www.conf"
+    conf_values:
+      - /etc/nginx/nginx.conf
+      - /etc/nginx/conf.d/default.conf
+      - /etc/php/8.0/fpm/pool.d/www.conf
+    conf: "{{ dict(conf_keys | zip(conf_values)) }}"
+    www_keys:
+      - "{{ base_path }}/www/.htpasswd"
+      - "{{ base_path }}/www/deploy.php"
+    www_values:
+      - /etc/nginx/.htpasswd
+      - /var/www/deploy.php
+    www: "{{ dict(www_keys | zip(www_values)) }}"
   tasks:
     - name: Add PHP repository
       apt_repository:
@@ -74,7 +83,7 @@
       copy:
         src: "{{ fe_repo_path }}"
         dest: "{{ www_path }}/html/"
-        remote_src: yes
+        remote_src: no
 
     - name: "Front-end: Record hash"
       shell: "./scripts/front_hash.sh > \"{{ www_path }}/front_hash.txt\""
@@ -115,14 +124,14 @@
       file:
         path: "{{ item.value }}"
         state: touch
-        moe: "0755"
+        mode: "0755"
       loop: "{{ lookup('dict', www) }}"
 
     - name: Copy portal assets
       copy:
         src: "{{ item.key }}"
         dest: "{{ item.value }}"
-        remote_src: yes
+        remote_src: no
       loop: "{{ lookup('dict', www) }}"
 
     - name: Create the directory for configuration files
