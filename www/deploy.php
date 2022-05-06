@@ -4,8 +4,8 @@ error_reporting(E_ERROR);
 const DEPLOY_LOG = "/var/www/deploy-log";
 
 function is_building() {
-  exec("sudo pm2 describe ansible", $_, $isBuilding);
-  return $isBuilding === 0;
+  $stopped = shell_exec("sudo pm2 ls | grep \"stopped\" | awk \"{print $4}\"");
+  return $stopped && str_contains($stopped, "ansible");
 }
 
 if ($_GET["req"] === "ping") {
@@ -32,8 +32,7 @@ if ($_GET["req"] === "ping") {
   if (is_building()) {
     echo "A build process is still running.";
   } else {
-    unlink(DEPLOY_LOG);
-    shell_exec("sudo pm2 delete ansible");
+    shell_exec("sudo pm2 delete ansible; sudo unlink \"" . DEPLOY_LOG . "\"");
     exec(
       "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --log \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
       $log,
