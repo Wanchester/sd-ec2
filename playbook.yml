@@ -1,0 +1,144 @@
+---
+- name: Deploy latest version of Sports Dashboard
+  hosts: localhost
+  become: true
+  vars:
+    app_name: sd
+    base_path: /home/ubuntu/sd-ec2
+    www_path: /var/www
+    fe_repo_url: "https://github.com/Wanchester/sd-front-ec2.git"
+    fe_repo_path: "{{ base_path }}/front/"
+    be_repo_url: "https://github.com/Wanchester/sd-back.git"
+    be_repo_path: "{{ base_path }}/back/"
+    conf:
+      "{{ base_path }}/conf/nginx.conf": /etc/nginx/nginx.conf
+      "{{ base_path }}/conf/default.conf": /etc/nginx/conf.d/default.conf
+      "{{ base_path }}/conf/www.conf": /etc/php/8.0/fpm/pool.d/www.conf
+    www:
+      "{{ base_path }}/www/.htpasswd": /etc/nginx/.htpasswd
+      "{{ base_path }}/www/deploy.php": /var/www/deploy.php
+  tasks:
+    - name: Add PHP repository
+      apt_repository:
+        repo: ppa:ondrej/php
+
+    - name: Update apt cache and install required modules
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+        - git
+        - nginx
+        - curl
+        - apache2-utils
+        - php8.0-fpm
+
+    - name: Setup curl for NodeJS
+      shell: "curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -"
+
+    - name: Install NodeJS
+      apt:
+        name: nodejs
+        state: present
+        update_cache: yes
+
+    - name: Install PM2
+      npm:
+        name: pm2
+        global: yes
+        state: present
+
+    - name: Delete old PM2 service if existing
+      shell: "pm2 delete {{ app_name }} -s || :"
+
+    - name: "Front-end: Allow unsafe checkout"
+      shell: "git config --global --add safe.directory {{ fe_repo_path }}"
+
+    - name: "Front-end: Pull latest source"
+      git:
+        repo: "{{ fe_repo_url }}"
+        dest: "{{ fe_repo_path }}"
+        force: yes
+        accept_hostkey: yes
+
+    - name: "Front-end: Copy public files"
+      copy:
+        src: "{{ fe_repo_path }}"
+        dest: "{{ www_path }}/html/"
+        remote_src: no
+
+    - name: "Front-end: Record hash"
+      shell: "./scripts/front_hash.sh > \"{{ www_path }}/front_hash.txt\""
+      args:
+        chdir: "{{ base_path }}"
+
+    - name: "Back-end: Allow unsafe checkout"
+      shell: "git config --global --add safe.directory {{ be_repo_path }}"
+
+    - name: "Back-end: Pull latest source"
+      git:
+        repo: "{{ be_repo_url }}"
+        dest: "{{ be_repo_path }}"
+        force: yes
+        accept_hostkey: yes
+
+    - name: "Back-end: Install local modules"
+      command: npm ci
+      args:
+        chdir: "{{ be_repo_path }}"
+
+    - name: "Back-end: Build source files"
+      command: npm run build
+      args:
+        chdir: "{{ be_repo_path }}"
+    
+    - name: "Back-end: Record hash"
+      shell: "./scripts/back_hash.sh > \"{{ www_path }}/back_hash.txt\""
+      args:
+        chdir: "{{ base_path }}"
+
+    - name: "Back-end: Start Express server with PM2"
+      command: "pm2 start npm --name \"{{ app_name }}\" -- start"
+      args:
+        chdir: "{{ be_repo_path }}"
+
+    - name: Prepare deploy portal assets
+      copy:
+        src: "{{ item.key }}"
+        dest: "{{ item.value }}"
+        remote_src: no
+      loop: "{{ lookup('dict', www) }}"
+
+    - name: Create the directory for configuration files
+      file:
+        path: "{{ item.value }}"
+        state: touch
+        mode: "0755"
+      loop: "{{ lookup('dict', conf) }}"
+
+    - name: Linking configuration files
+      file:
+        src: "{{ item.key }}"
+        dest: "{{ item.value }}"
+        state: link
+        force: yes
+      loop: "{{ lookup('dict', conf) }}"
+
+    - name: Check if www-data is allowed to sudo
+      shell: "grep -c \"^www-data ALL=\\(ALL\\) NOPASSWD: ALL\" /etc/sudoers || true"
+      register: test_www_sudo
+
+    - name: Allow www-data to sudo
+      lineinfile:
+        dest: /etc/sudoers
+        line: "www-data ALL=\\(ALL\\) NOPASSWD: ALL"
+      when: test_www_sudo.stdout == "0"
+
+    - name: Restart nginx service
+      service:
+        name: "{{ item }}"
+        state: restarted
+      with_items:
+        - php8.0-fpm
+        - nginx
