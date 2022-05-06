@@ -14,7 +14,7 @@ if ($_GET["req"] === "ping") {
   if (is_building()) {
     $obj = array(
       "code" => 1,
-      "log" => shell_exec("sudo pm2 log ansible --raw --nostream")
+      "log" => shell_exec("[ -r \"" . DEPLOY_LOG . "\" ] && cat \"" . DEPLOY_LOG . "\"")
     );
   } else {
     $obj = array(
@@ -35,7 +35,7 @@ if ($_GET["req"] === "ping") {
     unlink(DEPLOY_LOG);
     shell_exec("sudo pm2 delete ansible");
     exec(
-      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --log \"" . DEPLOY_LOG . "\" --name ansible 2>&1",
+      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --log \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
       $log,
       $started
     );
