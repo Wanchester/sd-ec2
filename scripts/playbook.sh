@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+git config --global --add safe.directory "/home/ubuntu/sd-ec2"
 cd /home/ubuntu/sd-ec2
 git reset --hard
 git pull
