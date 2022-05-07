@@ -245,7 +245,7 @@ if ($_GET["req"] === "ping") {
 
 <body>
   <fieldset class="f">
-    <legend class="l">Running at</legend>
+    <legend class="l">Running</legend>
     <table>
       <tr>
         <td class="b"><a href="https://github.com/Wanchester/sd-front-ec2">Front-end</a></td>
@@ -254,6 +254,10 @@ if ($_GET["req"] === "ping") {
       <tr>
         <td class="b"><a href="https://github.com/Wanchester/sd-back">Back-end</a></td>
         <td class="h"><?php echo file_get_contents("/var/www/back_hash.txt") ?: "N/A"; ?></td>
+      </tr>
+      <tr>
+        <td class="b"><a href="https://github.com/Wanchester/sd-ec2">Portal</a></td>
+        <td class="h"><?php echo file_get_contents("/var/www/portal_hash.txt") ?: "N/A"; ?></td>
       </tr>
     </table>
   </fieldset>

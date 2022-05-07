@@ -61,14 +61,6 @@
     - name: Delete old PM2 service if existing
       shell: "pm2 delete {{ app_name }} -s || :"
 
-    - name: Make scripts executable
-      file:
-        path: "{{ item }}"
-        mode: "0755"
-      with_items:
-        - "{{ base_path }}/scripts/front_hash.sh"
-        - "{{ base_path }}/scripts/back_hash.sh"
-
     - name: "Front-end: Allow unsafe checkout"
       shell: "git config --global --add safe.directory {{ fe_repo_path }}"
 
@@ -86,7 +78,7 @@
         remote_src: no
 
     - name: "Front-end: Record hash"
-      shell: "./scripts/front_hash.sh > \"{{ www_path }}/front_hash.txt\""
+      shell: "./scripts/hash.sh \"{{ fe_repo_path }}\" > \"{{ www_path }}/front_hash.txt\""
       args:
         chdir: "{{ base_path }}"
 
@@ -111,7 +103,7 @@
         chdir: "{{ be_repo_path }}"
     
     - name: "Back-end: Record hash"
-      shell: "./scripts/back_hash.sh > \"{{ www_path }}/back_hash.txt\""
+      shell: "./scripts/hash.sh \"{{ be_repo_path }}\" > \"{{ www_path }}/back_hash.txt\""
       args:
         chdir: "{{ base_path }}"
 
