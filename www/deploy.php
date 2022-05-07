@@ -303,6 +303,7 @@ if ($_GET["req"] === "ping") {
         span.className = 'r';
         textarea.value = reason.message;
       }).then(function () {
+        textarea.scrollTop = textarea.scrollHeight;
         timeout = setTimeout(load, 10000);
       });
     }
