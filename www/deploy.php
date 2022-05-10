@@ -80,12 +80,12 @@ if ($_GET["req"] === "ping") {
     echo "Cannot update while a build process is running.";
   } else {
     $post_env = json_decode(file_get_contents("php://input"));
-    if (!is_array($post_env)) {
-      $post_env = array();
+    if (!is_array($post_env) || !isset($post_env["env"]) || !is_array($post_env["env"])) {
+      $post_env = array("env" => array());
     }
 
     $env = "";
-    foreach ($post_env as $key => $value) {
+    foreach ($post_env["env"] as $key => $value) {
       if (!preg_match("/^[A-Z_][A-Z0-9_]*$/", $key)) {
         echo "Keys should consist only of uppercase letters, digits, and underscores, and NOT start with a digit (POSIX.1-2017).";
         return;
