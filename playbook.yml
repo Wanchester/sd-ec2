@@ -59,9 +59,6 @@
         global: yes
         state: present
 
-    - name: Delete old PM2 service if existing
-      shell: "pm2 delete {{ app_name }} -s || :"
-
     - name: "Front-end: Allow unsafe checkout"
       shell: "git config --global --add safe.directory {{ fe_repo_path }}"
 
@@ -82,6 +79,9 @@
       shell: "./scripts/hash.sh \"{{ fe_repo_path }}\" > \"{{ www_path }}/front_hash.txt\""
       args:
         chdir: "{{ base_path }}"
+    
+    - name: Delete running PM2 service if existing
+      shell: "pm2 delete {{ app_name }} -s || :"
 
     - name: "Back-end: Allow unsafe checkout"
       shell: "git config --global --add safe.directory {{ be_repo_path }}"
@@ -109,9 +109,9 @@
         chdir: "{{ base_path }}"
 
     - name: "Back-end: Start Express server with PM2"
-      shell: "eval $([ -r \"{{ env_path }}\" ] && cat \"{{ env_path }}\") pm2 start npm --name \"{{ app_name }}\" --time -- start"
+      shell: "./scripts/server_start.sh"
       args:
-        chdir: "{{ be_repo_path }}"
+        chdir: "{{ base_path }}"
 
     - name: Create the directory for portal assets
       copy:

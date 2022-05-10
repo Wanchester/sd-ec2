@@ -99,7 +99,7 @@ if ($_GET["req"] === "ping") {
 
     file_put_contents(ENV, $env);
     exec(
-      "eval $([ -r \"" . ENV . "\" ] && cat \"" . ENV . "\") sudo pm2 restart sd --update-env 2>&1",
+      "sudo bash /home/ubuntu/sd-ec2/scripts/server_start.sh",
       $log,
       $updated
     );
