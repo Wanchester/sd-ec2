@@ -90,7 +90,7 @@ if ($_GET["req"] === "ping") {
         echo "Keys should consist only of uppercase letters, digits, and underscores, and NOT start with a digit (POSIX.1-2017).";
         return;
       }
-      if (!preg_match("/^SD_SERVER_.?$/", $key)) {
+      if (!preg_match("/^SD_SERVER_.+$/", $key)) {
         echo "Keys should always start with SD_SERVER_ and NOT be empty.";
         return;
       }
@@ -466,9 +466,9 @@ if ($_GET["req"] === "ping") {
     var addButton = $('#new-variable');
     function table() {
       addButton.click(function () {
-        var tr = $('<tr><td><input /></td><td><input /></td><td><button>Remove</button></td></tr>');
+        var tr = $('<tr><td><input class="key" /></td><td><input class="value" /></td><td><button>Remove</button></td></tr>');
         tr.find('button').click(function () {
-          if (confirm('Are you sure to delete this key:' + tr.find('td').eq(0).find('input').val() + '?')) {
+          if (confirm('Are you sure to delete this key:' + tr.find('input.key').val() + '?')) {
             tr.remove();
             if (!tableElm.children('tr').not('.head, .empty').length) {
               tableElm.find('tr.empty').css('display', '');
@@ -489,8 +489,8 @@ if ($_GET["req"] === "ping") {
       for (var key in data) {
         addButton.trigger('click');
         var tr = tableElm.children().last();
-        tr.find('td').eq(0).find('input').val(key);
-        tr.find('td').eq(1).find('input').val(data[key]);
+        tr.find('input.key').val(key);
+        tr.find('input.value').val(data[key]);
       }
     }
     tableRefresh(<?php echo json_encode(parse_env(file_get_contents(ENV))); ?>);
