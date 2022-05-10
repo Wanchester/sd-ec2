@@ -97,7 +97,11 @@ if ($_GET["req"] === "ping") {
       $env .= "$key=\"" . addslashes(str_replace(array("\r\n", "\n", "\r"), "\\n", $value)) . "\"\n";
     }
 
-    file_put_contents(ENV, $env);
+    if (file_put_contents(ENV, $env) === false) {
+      echo "Cannot write new environment variables.";
+      return;
+    }
+
     exec(
       "sudo bash /home/ubuntu/sd-ec2/scripts/server_start.sh",
       $log,
