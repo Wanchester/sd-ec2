@@ -6,14 +6,14 @@ const NODE_LOG = "/var/www/node-log";
 const ENV = "/var/www/.env";
 
 function is_building($safe = true) {
-  $online = shell_exec("sudo pm2 ls | grep \"online\" | awk \"{print $4}\"");
-  if ($online === false || $online === null) {
+  exec("sudo pm2 ls | grep \"online\" | awk \"{print $4}\"", $output, $code);
+  if ($code !== 0) {
     if ($safe) {
       return false;
     }
     throw new Exception("Cannot detect building state.");
   }
-  return str_contains($online, "ansible");
+  return str_contains(implode("\n", $output), "ansible");
 }
 
 function parse_env($env) {
