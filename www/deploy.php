@@ -79,7 +79,7 @@ if ($_GET["req"] === "ping") {
   if (is_building()) {
     echo "Cannot update while a build process is running.";
   } else {
-    $post_env = json_decode(file_get_contents("php://input"));
+    $post_env = json_decode(file_get_contents("php://input"), true);
     if (!is_array($post_env) || !isset($post_env["env"]) || !is_array($post_env["env"])) {
       $post_env = array("env" => array());
     }
