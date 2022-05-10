@@ -2,6 +2,8 @@
 error_reporting(E_ERROR);
 
 const DEPLOY_LOG = "/var/www/deploy-log";
+const NODE_LOG = "/var/www/node-log";
+const ENV = "/var/www/.env";
 
 function is_building($safe = true) {
   $online = shell_exec("sudo pm2 ls | grep \"online\" | awk \"{print $4}\"");
@@ -12,6 +14,23 @@ function is_building($safe = true) {
     throw new Exception("Cannot detect building state.");
   }
   return str_contains($online, "ansible");
+}
+
+function parse_env($env) {
+  $line = '/(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*\'(?:\\\'|[^\'])*\'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/m';
+  $num_matches = intval(preg_match_all($line, preg_replace("/\r\n?/m", "\n", strval($env)), $matches));
+  $env = array();
+  for ($i = 0; $i < $num_matches; ++$i) {
+    $key = $matches[1][$i];
+    $value = trim($matches[2][$i]);
+    $first_char = $value[0] === '"';
+    $value = preg_replace('/^([\'"`])([\s\S]*)\1$/m', "$2", $value);
+    if ($first_char) {
+      $value = preg_replace("/\\r/", "\r", preg_replace("/\\n/", "\n", $value));
+    }
+    $env[$key] = $value;
+  }
+  return $env;
 }
 
 if ($_GET["req"] === "ping") {
@@ -52,8 +71,41 @@ if ($_GET["req"] === "ping") {
       $started
     );
     echo $started === 0 ?
-      "Started the build process. Refresh the page when it's done to see new commit hash." :
+      "Started the build process. Refresh the page if the logs are not refreshing or to see new commit hash." :
       ("Could not start the build process.\n" . join("\n", $log));
+  }
+} elseif ($_GET["req"] === "updateVars") {
+  header("Content-Type: application/json; charset=UTF-8", true);
+
+  if (is_building()) {
+    echo "Cannot update while a build process is running.";
+  } else {
+    if (!isset($_POST["env"]) || !is_array($_POST["env"])) {
+      $_POST["env"] = array();
+    }
+
+    $env = "";
+    foreach ($_POST["env"] as $key => $value) {
+      if (!preg_match("/^[A-Z_][A-Z0-9_]*$/", $key)) {
+        echo "Keys should consist only of uppercase letters, digits, and underscores, and NOT start with a digit (POSIX.1-2017).";
+        return;
+      }
+      if (!preg_match("/^SD_SERVER_.?$/", $key)) {
+        echo "Keys should always start with SD_SERVER_ and NOT be empty.";
+        return;
+      }
+      $env .= "$key=\"" . addslashes(str_replace(array("\r\n", "\n", "\r"), "\\n", $value)) . "\"";
+    }
+
+    file_put_contents(ENV, $env);
+    exec(
+      "eval $([ -r \"" . ENV . "\" ] && cat \"" . ENV . "\") sudo pm2 restart sd --update-env 2>&1",
+      $log,
+      $updated
+    );
+    echo $updated === 0 ?
+      "Successfully restarted the server with new environment variables." :
+      ("Could not restart the server.\n" . join("\n", $log));
   }
 } else {
   header("Content-Type: text/html; charset=UTF-8", true);
@@ -184,12 +236,12 @@ if ($_GET["req"] === "ping") {
       font-size: 14px;
       padding: 8px;
       width: 100%;
-      margin-bottom: 8px;
       background: #eee;
     }
 
     .d {
       text-align: center;
+      margin-top: 8px;
     }
 
     .d button {
@@ -240,6 +292,12 @@ if ($_GET["req"] === "ping") {
     .n span {
       font-weight: bold;
     }
+
+    small {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
   </style>
 </head>
 
@@ -262,26 +320,52 @@ if ($_GET["req"] === "ping") {
     </table>
   </fieldset>
   <fieldset class="f">
+    <legend class="l">Variables</legend>
+    <table id="vars">
+      <tr class="head">
+        <th>Key</th>
+        <th>Value</th>
+        <th>Action</th>
+      </tr>
+    </table>
+    <div class="d"><button id="update">Update!</button></div>
+    <noscript>
+      <div class="n"><span>Note:</span> Please enable JavaScript to update.</div>
+    </noscript>
+  </fieldset>
+  <fieldset class="f">
+    <legend class="l">Logs</legend>
+    <textarea class="t" rows="15" readonly><?php echo shell_exec("sudo pm2 logs sd --lines 50 --nostream"); ?></textarea>
+    <small>Showing the last 50 lines. Refresh to see new logs.</small>
+  </fieldset>
+  <fieldset class="f">
     <legend class="l">Deploy</legend>
-    <div class="s">Status: <span class="i"></span></div>
-    <textarea class="t" rows="15" readonly></textarea>
-    <div class="d"><button>Deploy it!</button></div>
+    <div class="s">Status: <span id="status" class="i"></span></div>
+    <textarea id="deploy-logs" class="t" rows="15" readonly></textarea>
+    <div class="d"><button id="deploy">Deploy!</button></div>
     <noscript>
       <div class="n"><span>Note:</span> Please enable JavaScript to deploy.</div>
     </noscript>
   </fieldset>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
   <script>
-    var button = document.getElementsByClassName('d')[0].children[0];
-    var span = document.getElementsByClassName('i')[0];
-    var textarea = document.getElementsByClassName('t')[0];
+    var tokenInput = $('#token');
+    var urlInput = $('#url');
+    var updateButton = $('#update');
+    var deployButton = $('#deploy');
+    var span = $('#status');
+    var textarea = $('#deploy-logs');
+    var tableElm = $('#vars');
     var timeout;
 
     function load() {
       if (timeout != null) {
         clearTimeout(timeout);
+        timeout = null;
       }
 
+      var refreshing = true;
       fetch('/deploy?req=ping').then(function (value) {
         if (value.status !== 200) {
           throw new Error('Ping failed. Exited with code=' + value.status + '.');
@@ -290,21 +374,24 @@ if ($_GET["req"] === "ping") {
       }).then(function (value) {
         switch (value.code) {
           case 0:
-            span.className = 'i';
+            span.attr('class', 'i');
+            refreshing = false;
             break;
           case 1:
-            span.className = 'p';
+            span.attr('class', 'p');
             break;
           default:
-            span.className = 'r';
+            span.attr('class', 'r');
         }
-        textarea.value = value.log;
+        textarea.val(value.log);
       }).catch(function (reason) {
-        span.className = 'r';
-        textarea.value = reason.message;
+        span.attr('class', 'r');
+        textarea.val(reason.message);
       }).then(function () {
-        textarea.scrollTop = textarea.scrollHeight;
-        timeout = setTimeout(load, 10000);
+        textarea[0].scrollTop = textarea[0].scrollHeight;
+        if (refreshing) {
+          setTimeout(load, 5000);
+        }
       });
     }
     load();
@@ -312,14 +399,73 @@ if ($_GET["req"] === "ping") {
     function deploy() {
       fetch('/deploy?req=start').then(function (value) {
         return value.status !== 200 ?
-          'Start failed. Exited with code=' + value.status + '.' :
+          'Failed to start the deployment. Exited with code=' + value.status + '.' :
           value.text();
       }).then(function (value) {
         alert(value);
         load();
       });
     }
-    button.addEventListener('click', deploy);
+    deployButton.click(deploy);
+
+    function update() {
+      var env = {};
+
+      tableElm.find('tr').not('.head').each(function () {
+        var td = $(this).find('td');
+        env[td.eq(0).find('input').val()] = td.eq(1).find('input').val();
+      });
+
+      fetch('/deploy?req=updateVars', {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ env })
+      }).then(function (value) {
+        if (value.status !== 200) {
+          throw new Error('Update failed. Exited with code=' + value.status + '.');
+        }
+        return value.text();
+      }).then(function (value) {
+        try {
+          tableRefresh(JSON.parse(value));
+        } catch (err) {
+          alert(value);
+        }
+      }).catch(function (reason) {
+        alert(reason.message);
+      });
+    }
+    updateButton.click(update);
+
+    var addButton = $('<button style="margin-bottom: 8px;">Add</button>');
+    function table() {
+      addButton.click(function () {
+        var tr = $('<tr><td><input /></td><td><input /></td><td><button>Remove</button></td></tr>');
+        tr.find('button').click(function () {
+          if (confirm('Are you sure to delete this key:' + tr.find('td').eq(0).find('input').val() + '?')) {
+            tr.remove();
+          }
+        });
+        tableElm.append(tr);
+      });
+      addButton.insertBefore(tableElm);
+    }
+    table();
+
+    function tableRefresh(data) {
+      tableElm.children('tr').not('.head').remove();
+
+      for (var key in data) {
+        addButton.trigger('click');
+        var tr = tableElm.children().last();
+        tr.find('td').eq(0).find('input').val(key);
+        tr.find('td').eq(1).find('input').val(data[key]);
+      }
+    }
+    tableRefresh(<?php echo json_encode(parse_env(file_get_contents(ENV))); ?>);
   </script>
 </body>
 

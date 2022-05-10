@@ -26,6 +26,8 @@
       - /etc/nginx/.htpasswd
       - /var/www/deploy.php
     www: "{{ dict(www_keys | zip(www_values)) }}"
+    env_path: "{{ www_path }}/.env"
+    node_log_path: "{{ www_path }}/node-log"
   tasks:
     - name: Add PHP repository
       apt_repository:
@@ -108,7 +110,7 @@
         chdir: "{{ base_path }}"
 
     - name: "Back-end: Start Express server with PM2"
-      command: "pm2 start npm --name \"{{ app_name }}\" -- start"
+      command: "eval $([ -r \"{{ env_path }}\" ] && cat \"{{ env_path }}\") pm2 start npm --name \"{{ app_name }}\" --log \"${{ node_log_path }}\" --time -- start"
       args:
         chdir: "{{ be_repo_path }}"
 
