@@ -98,6 +98,7 @@ if ($_GET["req"] === "ping") {
     }
 
     file_put_contents(ENV, $env);
+    shell_exec("sudo unlink \"" . NODE_LOG . "\"");
     exec(
       "eval $([ -r \"" . ENV . "\" ] && cat \"" . ENV . "\") sudo pm2 restart sd --update-env 2>&1",
       $log,
@@ -146,6 +147,7 @@ if ($_GET["req"] === "ping") {
       width: 480px;
       margin-bottom: 16px;
       padding: 12px 20px;
+      text-align: center;
     }
 
     @media (min-width: 576px) {
@@ -181,6 +183,10 @@ if ($_GET["req"] === "ping") {
     .f table {
       margin: 0 auto;
       border-collapse: collapse;
+    }
+
+    .f table tr {
+      line-height: 1.5em;
     }
 
     .b {
@@ -297,6 +303,31 @@ if ($_GET["req"] === "ping") {
       font-size: 14px;
       opacity: 0.8;
       margin-top: 8px;
+      display: inline-block;
+    }
+
+    #vars {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #000;
+    }
+
+    #vars tr {
+      border: 1px solid #000;
+    }
+
+    #vars tr.head {
+      background: #ccc;
+    }
+
+    #vars tr.empty td {
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    #vars input {
+      width: 100%;
     }
   </style>
 </head>
@@ -321,11 +352,15 @@ if ($_GET["req"] === "ping") {
   </fieldset>
   <fieldset class="f">
     <legend class="l">Variables</legend>
+    <button id="new-variable" style="margin-bottom: 8px;">Add new variable</button>
     <table id="vars">
       <tr class="head">
         <th>Key</th>
         <th>Value</th>
         <th>Action</th>
+      </tr>
+      <tr class="empty">
+        <td colspan="3">No variables defined.</td>
       </tr>
     </table>
     <div class="d"><button id="update">Update!</button></div>
@@ -335,7 +370,7 @@ if ($_GET["req"] === "ping") {
   </fieldset>
   <fieldset class="f">
     <legend class="l">Logs</legend>
-    <textarea class="t" rows="15" readonly><?php echo shell_exec("sudo pm2 logs sd --lines 50 --nostream"); ?></textarea>
+    <textarea class="t" rows="15" readonly><?php echo shell_exec("tail --lines=50 \"" . NODE_LOG . "\""); ?></textarea>
     <small>Showing the last 50 lines. Refresh to see new logs.</small>
   </fieldset>
   <fieldset class="f">
@@ -440,15 +475,19 @@ if ($_GET["req"] === "ping") {
     }
     updateButton.click(update);
 
-    var addButton = $('<button style="margin-bottom: 8px;">Add</button>');
+    var addButton = $('#new-variable');
     function table() {
       addButton.click(function () {
         var tr = $('<tr><td><input /></td><td><input /></td><td><button>Remove</button></td></tr>');
         tr.find('button').click(function () {
           if (confirm('Are you sure to delete this key:' + tr.find('td').eq(0).find('input').val() + '?')) {
             tr.remove();
+            if (!tableElm.children('tr').not('.head, .empty').length) {
+              tableElm.find('tr.empty').css('display', '');
+            }
           }
         });
+        tableElm.find('tr.empty').css('display', 'none');
         tableElm.append(tr);
       });
       addButton.insertBefore(tableElm);
@@ -457,6 +496,7 @@ if ($_GET["req"] === "ping") {
 
     function tableRefresh(data) {
       tableElm.children('tr').not('.head').remove();
+      tableElm.find('tr.empty').css('display', '');
 
       for (var key in data) {
         addButton.trigger('click');
