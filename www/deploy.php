@@ -79,12 +79,13 @@ if ($_GET["req"] === "ping") {
   if (is_building()) {
     echo "Cannot update while a build process is running.";
   } else {
-    if (!isset($_POST["env"]) || !is_array($_POST["env"])) {
-      $_POST["env"] = array();
+    $post_env = json_decode(file_get_contents("php://input"));
+    if (!is_array($post_env)) {
+      $post_env = array();
     }
 
     $env = "";
-    foreach ($_POST["env"] as $key => $value) {
+    foreach ($post_env as $key => $value) {
       if (!preg_match("/^[A-Z_][A-Z0-9_]*$/", $key)) {
         echo "Keys should consist only of uppercase letters, digits, and underscores, and NOT start with a digit (POSIX.1-2017).";
         return;
@@ -93,7 +94,7 @@ if ($_GET["req"] === "ping") {
         echo "Keys should always start with SD_SERVER_ and NOT be empty.";
         return;
       }
-      $env .= "$key=\"" . addslashes(str_replace(array("\r\n", "\n", "\r"), "\\n", $value)) . "\"";
+      $env .= "$key=\"" . addslashes(str_replace(array("\r\n", "\n", "\r"), "\\n", $value)) . "\"\n";
     }
 
     file_put_contents(ENV, $env);
