@@ -308,16 +308,17 @@ if ($_GET["req"] === "ping") {
 
     #vars {
       width: 100%;
-      padding: 8px;
       border: 1px solid #000;
+      table-layout: fixed;
     }
 
-    #vars tr {
+    #vars th, #vars td {
       border: 1px solid #000;
+      padding: 4px;
     }
 
     #vars tr.head {
-      background: #ccc;
+      background: #ddd;
     }
 
     #vars tr.empty td {
@@ -355,9 +356,9 @@ if ($_GET["req"] === "ping") {
     <button id="new-variable" style="margin-bottom: 8px;">Add new variable</button>
     <table id="vars">
       <tr class="head">
-        <th>Key</th>
-        <th>Value</th>
-        <th>Action</th>
+        <th style="width: 30%;">Key</th>
+        <th style="width: 40%;">Value</th>
+        <th style="width: 30%;">Action</th>
       </tr>
       <tr class="empty">
         <td colspan="3">No variables defined.</td>
