@@ -2,7 +2,6 @@
 error_reporting(E_ERROR);
 
 const DEPLOY_LOG = "/var/www/deploy-log";
-const NODE_LOG = "/var/www/node-log";
 const ENV = "/var/www/.env";
 
 function is_building($safe = true) {
@@ -75,7 +74,7 @@ if ($_GET["req"] === "ping") {
       ("Could not start the build process.\n" . join("\n", $log));
   }
 } elseif ($_GET["req"] === "updateVars") {
-  header("Content-Type: application/json; charset=UTF-8", true);
+  header("Content-Type: text/plain; charset=UTF-8", true);
 
   if (is_building()) {
     echo "Cannot update while a build process is running.";
@@ -98,7 +97,6 @@ if ($_GET["req"] === "ping") {
     }
 
     file_put_contents(ENV, $env);
-    shell_exec("sudo rm -f \"" . NODE_LOG . "\"");
     exec(
       "eval $([ -r \"" . ENV . "\" ] && cat \"" . ENV . "\") sudo pm2 restart sd --update-env 2>&1",
       $log,
@@ -352,7 +350,7 @@ if ($_GET["req"] === "ping") {
     </table>
   </fieldset>
   <fieldset class="f">
-    <legend class="l">Variables</legend>
+    <legend class="l">Environment Variables</legend>
     <button id="new-variable" style="margin-bottom: 8px;">Add new variable</button>
     <table id="vars">
       <tr class="head">
@@ -368,11 +366,6 @@ if ($_GET["req"] === "ping") {
     <noscript>
       <div class="n"><span>Note:</span> Please enable JavaScript to update.</div>
     </noscript>
-  </fieldset>
-  <fieldset class="f">
-    <legend class="l">Logs</legend>
-    <textarea class="t" rows="15" readonly><?php echo shell_exec("tail --lines=50 \"" . NODE_LOG . "\""); ?></textarea>
-    <small>Showing the last 50 lines. Refresh to see new logs.</small>
   </fieldset>
   <fieldset class="f">
     <legend class="l">Deploy</legend>
@@ -447,7 +440,7 @@ if ($_GET["req"] === "ping") {
     function update() {
       var env = {};
 
-      tableElm.find('tr').not('.head').each(function () {
+      tableElm.find('tr').not('.head, .empty').each(function () {
         var td = $(this).find('td');
         env[td.eq(0).find('input').val()] = td.eq(1).find('input').val();
       });
@@ -460,18 +453,11 @@ if ($_GET["req"] === "ping") {
         },
         body: JSON.stringify({ env })
       }).then(function (value) {
-        if (value.status !== 200) {
-          throw new Error('Update failed. Exited with code=' + value.status + '.');
-        }
-        return value.text();
+        return value.status !== 200 ?
+          'Update failed. Exited with code=' + value.status + '.' :
+          value.text();
       }).then(function (value) {
-        try {
-          tableRefresh(JSON.parse(value));
-        } catch (err) {
-          alert(value);
-        }
-      }).catch(function (reason) {
-        alert(reason.message);
+        alert(value);
       });
     }
     updateButton.click(update);
@@ -496,7 +482,7 @@ if ($_GET["req"] === "ping") {
     table();
 
     function tableRefresh(data) {
-      tableElm.children('tr').not('.head').remove();
+      tableElm.children('tr').not('.head, .empty').remove();
       tableElm.find('tr.empty').css('display', '');
 
       for (var key in data) {
