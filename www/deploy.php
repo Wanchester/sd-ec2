@@ -64,7 +64,7 @@ if ($_GET["req"] === "ping") {
   if (is_building()) {
     echo "A build process is still running.";
   } else {
-    shell_exec("sudo pm2 delete ansible; sudo unlink \"" . DEPLOY_LOG . "\"");
+    shell_exec("sudo pm2 delete ansible; sudo rm -f \"" . DEPLOY_LOG . "\"");
     exec(
       "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --output \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
       $log,
@@ -98,7 +98,7 @@ if ($_GET["req"] === "ping") {
     }
 
     file_put_contents(ENV, $env);
-    shell_exec("sudo unlink \"" . NODE_LOG . "\"");
+    shell_exec("sudo rm -f \"" . NODE_LOG . "\"");
     exec(
       "eval $([ -r \"" . ENV . "\" ] && cat \"" . ENV . "\") sudo pm2 restart sd --update-env 2>&1",
       $log,

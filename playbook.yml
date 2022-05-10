@@ -110,7 +110,7 @@
         chdir: "{{ base_path }}"
 
     - name: "Back-end: Start Express server with PM2"
-      shell: "unlink \"{{ node_log_path }}\" && eval $([ -r \"{{ env_path }}\" ] && cat \"{{ env_path }}\") pm2 start npm --name \"{{ app_name }}\" --log \"${{ node_log_path }}\" --time -- start"
+      shell: "rm -f \"{{ node_log_path }}\" && eval $([ -r \"{{ env_path }}\" ] && cat \"{{ env_path }}\") pm2 start npm --name \"{{ app_name }}\" --log \"${{ node_log_path }}\" --time -- start"
       args:
         chdir: "{{ be_repo_path }}"
 
