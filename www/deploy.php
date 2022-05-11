@@ -121,7 +121,7 @@ if ($_GET["req"] === "ping") {
     $flushed
   );
   echo $flushed === 0 ?
-    "Successfully flushed server logs. Refresh the page to see the changes." :
+    "Successfully flushed current server logs. Refresh the page to see the changes." :
     ("Could not flush server logs.\n" . join("\n", $log));
 } else {
   header("Content-Type: text/html; charset=UTF-8", true);
@@ -386,7 +386,7 @@ if ($_GET["req"] === "ping") {
   </fieldset>
   <fieldset class="f">
     <legend class="l">Server Logs</legend>
-    <textarea id="server-logs" class="t" rows="15" readonly><?php echo nl2br(htmlspecialchars(shell_exec("[ -r \"" . NODE_LOG . "\" ] && cat \"" . NODE_LOG . "\"") ?: "")); ?></textarea>
+    <textarea id="server-logs" class="t" rows="15" readonly><?php echo htmlspecialchars(shell_exec("[ -r \"" . NODE_LOG . "\" ] && cat \"" . NODE_LOG . "\"") ?: ""); ?></textarea>
     <small>Refresh the page to see new logs.</small>
     <div class="d"><button id="flush">Flush logs!</button></div>
     <noscript>
