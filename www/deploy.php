@@ -2,6 +2,7 @@
 error_reporting(E_ERROR);
 
 const DEPLOY_LOG = "/var/www/deploy-log";
+const NODE_LOG = "/var/www/node-log";
 const ENV = "/var/www/.env";
 
 function is_building($safe = true) {
@@ -111,6 +112,17 @@ if ($_GET["req"] === "ping") {
       "Successfully restarted the server with new environment variables." :
       ("Could not restart the server.\n" . join("\n", $log));
   }
+} elseif ($_GET["req"] === "flush") {
+  header("Content-Type: text/plain; charset=UTF-8", true);
+
+  exec(
+    "sudo pm2 flush sd",
+    $log,
+    $flushed
+  );
+  echo $flushed === 0 ?
+    "Successfully flushed server logs. Refresh the page to see the changes." :
+    ("Could not flush server logs.\n" . join("\n", $log));
 } else {
   header("Content-Type: text/html; charset=UTF-8", true);
 ?>
@@ -373,6 +385,15 @@ if ($_GET["req"] === "ping") {
     </noscript>
   </fieldset>
   <fieldset class="f">
+    <legend class="l">Server Logs</legend>
+    <textarea id="server-logs" class="t" rows="15" readonly><?php echo nl2br(htmlspecialchars(shell_exec("[ -r \"" . NODE_LOG . "\" ] && cat \"" . NODE_LOG . "\"") ?: "")); ?></textarea>
+    <small>Refresh the page to see new logs.</small>
+    <div class="d"><button id="flush">Flush logs!</button></div>
+    <noscript>
+      <div class="n"><span>Note:</span> Please enable JavaScript to flush logs.</div>
+    </noscript>
+  </fieldset>
+  <fieldset class="f">
     <legend class="l">Deploy</legend>
     <div class="s">Status: <span id="status" class="i"></span></div>
     <textarea id="deploy-logs" class="t" rows="15" readonly></textarea>
@@ -386,6 +407,7 @@ if ($_GET["req"] === "ping") {
   <script>
     var tokenInput = $('#token');
     var urlInput = $('#url');
+    var flushButton = $('#flush');
     var updateButton = $('#update');
     var deployButton = $('#deploy');
     var span = $('#status');
@@ -498,6 +520,20 @@ if ($_GET["req"] === "ping") {
       }
     }
     tableRefresh(<?php echo json_encode(parse_env(file_get_contents(ENV))); ?>);
+
+    function flush() {
+      if (confirm('Are you sure to flush all the current server logs?')) {
+        fetch('/deploy?req=flush').then(function (value) {
+          if (value.status !== 200) {
+            throw new Error('Flush failed. Exited with code=' + value.status + '.');
+          }
+          return value.text();
+        }).then(function (value) {
+          alert(value);
+        });
+      }
+    }
+    flushButton.on('click', flush);
   </script>
 </body>
 
