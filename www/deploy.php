@@ -353,15 +353,15 @@ if ($_GET["req"] === "ping") {
     <legend class="l">Running</legend>
     <table>
       <tr>
-        <td class="b"><a href="https://github.com/Wanchester/sd-front-ec2">Front-end</a></td>
+        <td class="b"><a href="https://github.com/Wanchester/sd-front-ec2" target="_blank">Front-end</a></td>
         <td class="h"><?php echo file_get_contents("/var/www/front_hash.txt") ?: "N/A"; ?></td>
       </tr>
       <tr>
-        <td class="b"><a href="https://github.com/Wanchester/sd-back">Back-end</a></td>
+        <td class="b"><a href="https://github.com/Wanchester/sd-back" target="_blank">Back-end</a></td>
         <td class="h"><?php echo file_get_contents("/var/www/back_hash.txt") ?: "N/A"; ?></td>
       </tr>
       <tr>
-        <td class="b"><a href="https://github.com/Wanchester/sd-ec2">Portal</a></td>
+        <td class="b"><a href="https://github.com/Wanchester/sd-ec2" target="_blank">Portal</a></td>
         <td class="h"><?php echo file_get_contents("/var/www/portal_hash.txt") ?: "N/A"; ?></td>
       </tr>
     </table>
@@ -453,6 +453,10 @@ if ($_GET["req"] === "ping") {
     load();
 
     function deploy() {
+      if (!confirm('Are you sure to start the deployment?')) {
+        return;
+      }
+
       fetch('/deploy?req=start').then(function (value) {
         return value.status !== 200 ?
           'Failed to start the deployment. Exited with code=' + value.status + '.' :
@@ -465,6 +469,10 @@ if ($_GET["req"] === "ping") {
     deployButton.click(deploy);
 
     function update() {
+      if (!confirm('Are you sure to update the environment variables?')) {
+        return;
+      }
+
       var env = {};
 
       tableElm.find('tr').not('.head, .empty').each(function () {
@@ -522,16 +530,18 @@ if ($_GET["req"] === "ping") {
     tableRefresh(<?php echo json_encode(parse_env(file_get_contents(ENV))); ?>);
 
     function flush() {
-      if (confirm('Are you sure to flush all the current server logs?')) {
-        fetch('/deploy?req=flush').then(function (value) {
-          if (value.status !== 200) {
-            throw new Error('Flush failed. Exited with code=' + value.status + '.');
-          }
-          return value.text();
-        }).then(function (value) {
-          alert(value);
-        });
+      if (!confirm('Are you sure to flush all the current server logs?')) {
+        return;
       }
+
+      fetch('/deploy?req=flush').then(function (value) {
+        if (value.status !== 200) {
+          throw new Error('Flush failed. Exited with code=' + value.status + '.');
+        }
+        return value.text();
+      }).then(function (value) {
+        alert(value);
+      });
     }
     flushButton.on('click', flush);
   </script>
