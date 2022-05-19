@@ -43,6 +43,7 @@
         - curl
         - apache2-utils
         - php8.0-fpm
+        - sqlite3
 
     - name: Setup curl for NodeJS
       shell: "curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -"
