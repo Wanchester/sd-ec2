@@ -69,6 +69,16 @@
         dest: "{{ fe_repo_path }}"
         force: yes
         accept_hostkey: yes
+      when: front_hash is undefined or front_hash | length == 0
+    
+    - name: "Front-end: Checkout"
+      git:
+        repo: "{{ fe_repo_url }}"
+        dest: "{{ fe_repo_path }}"
+        force: yes
+        accept_hostkey: yes
+        version: "{{ front_hash }}"
+      when: front_hash is defined and front_hash | length > 0
 
     - name: "Front-end: Copy public files"
       copy:
@@ -93,6 +103,16 @@
         dest: "{{ be_repo_path }}"
         force: yes
         accept_hostkey: yes
+      when: back_hash is undefined or back_hash | length == 0
+    
+    - name: "Back-end: Checkout"
+      git:
+        repo: "{{ be_repo_url }}"
+        dest: "{{ be_repo_path }}"
+        force: yes
+        accept_hostkey: yes
+        version: "{{ back_hash }}"
+      when: back_hash is defined and back_hash | length > 0
 
     - name: "Back-end: Install local modules"
       command: npm ci
