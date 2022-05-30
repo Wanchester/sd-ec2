@@ -17,7 +17,7 @@ function is_building($safe = true) {
 }
 
 function parse_env($env) {
-  $line = '/(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*\'(?:\\\'|[^\'])*\'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/m';
+  $line = '/(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*\'(?:\\\\\'|[^\'])*\'|\s*"(?:\\\\"|[^"])*"|\s*`(?:\\\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/m';
   $num_matches = intval(preg_match_all($line, preg_replace("/\r\n?/m", "\n", strval($env)), $matches));
   $env = array();
   for ($i = 0; $i < $num_matches; ++$i) {
@@ -369,15 +369,19 @@ if ($_GET["req"] === "ping") {
   <fieldset class="f">
     <legend class="l">Environment Variables</legend>
     <button id="new-variable" style="margin-bottom: 8px;">Add new variable</button>
-    <table id="vars">
-      <tr class="head">
-        <th style="width: 30%;">Key</th>
-        <th style="width: 40%;">Value</th>
-        <th style="width: 30%;">Action</th>
-      </tr>
-      <tr class="empty">
-        <td colspan="3">No variables defined.</td>
-      </tr>
+    <table>
+      <thead>
+        <tr class="head">
+          <th style="width: 30%;">Key</th>
+          <th style="width: 40%;">Value</th>
+          <th style="width: 30%;">Action</th>
+        </tr>
+      </thead>
+      <tbody id="vars">
+        <tr class="empty">
+          <td colspan="3">No variables defined.</td>
+        </tr>
+      <tbody>
     </table>
     <div class="d"><button id="update">Update!</button></div>
     <noscript>
