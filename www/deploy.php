@@ -516,7 +516,6 @@ if ($_GET["req"] === "ping") {
         tableElm.find('tr.empty').css('display', 'none');
         tableElm.append(tr);
       });
-      addButton.insertBefore(tableElm);
     }
     table();
 
