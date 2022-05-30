@@ -381,7 +381,7 @@ if ($_GET["req"] === "ping") {
         <tr class="empty">
           <td colspan="3">No variables defined.</td>
         </tr>
-      <tbody>
+      </tbody>
     </table>
     <div class="d"><button id="update">Update!</button></div>
     <noscript>
