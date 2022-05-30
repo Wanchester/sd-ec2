@@ -369,7 +369,7 @@ if ($_GET["req"] === "ping") {
   <fieldset class="f">
     <legend class="l">Environment Variables</legend>
     <button id="new-variable" style="margin-bottom: 8px;">Add new variable</button>
-    <table>
+    <table id="vars">
       <thead>
         <tr class="head">
           <th style="width: 30%;">Key</th>
@@ -377,7 +377,7 @@ if ($_GET["req"] === "ping") {
           <th style="width: 30%;">Action</th>
         </tr>
       </thead>
-      <tbody id="vars">
+      <tbody>
         <tr class="empty">
           <td colspan="3">No variables defined.</td>
         </tr>
@@ -416,7 +416,7 @@ if ($_GET["req"] === "ping") {
     var deployButton = $('#deploy');
     var span = $('#status');
     var textarea = $('#deploy-logs');
-    var tableElm = $('#vars');
+    var tableElm = $('#vars tbody');
     var timeout;
 
     function load() {
