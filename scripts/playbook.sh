@@ -21,7 +21,7 @@ if [ $ret -ne 0 ]; then
   else
     echo "\n\n\nFound currently working versions. Trying to recover..."
 
-    if ! [ -z "$LAST_PORTAL_HASH" ] then
+    if ! [ -z "$LAST_PORTAL_HASH" ]; then
       git reset --hard
       git checkout "$LAST_PORTAL_HASH"
     fi
