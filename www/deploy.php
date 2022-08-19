@@ -2,7 +2,6 @@
 error_reporting(E_ERROR);
 
 const DEPLOY_LOG = "/var/www/deploy-log";
-const NODE_LOG = "/var/www/node-log";
 const ENV = "/var/www/.env";
 
 function is_building($safe = true) {
@@ -390,7 +389,7 @@ if ($_GET["req"] === "ping") {
   </fieldset>
   <fieldset class="f">
     <legend class="l">Server Logs</legend>
-    <textarea id="server-logs" class="t" rows="15" readonly><?php echo htmlspecialchars(shell_exec("[ -r \"" . NODE_LOG . "\" ] && cat \"" . NODE_LOG . "\"") ?: ""); ?></textarea>
+    <textarea id="server-logs" class="t" rows="15" readonly><?php echo htmlspecialchars(shell_exec("sudo pm2 logs sd --nostream") ?: ""); ?></textarea>
     <small>Refresh the page to see new logs.</small>
     <div class="d"><button id="flush">Flush logs!</button></div>
     <noscript>
