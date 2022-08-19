@@ -37,6 +37,9 @@ if [ $ret -ne 0 ]; then
   fi
 fi
 
+# Change the owner of the public folder
+chown -R $USER:$USER "/var/www"
+
 ./scripts/hash.sh "/home/ubuntu/sd-ec2" > "/var/www/portal_hash.txt"
 
 echo "\n\n\nDeploy succeeded."
