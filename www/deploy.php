@@ -65,7 +65,7 @@ if ($_GET["req"] === "ping") {
   } else {
     shell_exec("sudo pm2 delete ansible; sudo rm -f \"" . DEPLOY_LOG . "\"");
     exec(
-      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --output \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
+      "sudo pm2 start \"/home/ubuntu/sd-ec2/scripts/playbook.sh\" --log \"" . DEPLOY_LOG . "\" --name ansible --no-autorestart 2>&1",
       $log,
       $started
     );
