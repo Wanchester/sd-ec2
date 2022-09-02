@@ -13,13 +13,13 @@ ansible-playbook playbook.yml
 # Fall back on the last working version if deploy fails
 ret=$?
 if [ $ret -ne 0 ]; then
-  echo "\n\n\nAnsible failed to deploy (code=$ret). Falling back on latest working version..."
+  printf "\n\n\nAnsible failed to deploy (code=$ret). Falling back on latest working version..."
 
   if [ -z "$LAST_FRONT_HASH" ] && [ -z "$LAST_BACK_HASH" ] && [ -z "$LAST_PORTAL_HASH" ]; then
-    echo "\n\n\nNo working version has been found. Deploy failed."
+    printf "\n\n\nNo working version has been found. Deploy failed."
     exit 1
   else
-    echo "\n\n\nFound currently working versions. Trying to recover..."
+    printf "\n\n\nFound currently working versions. Trying to recover..."
 
     if ! [ -z "$LAST_PORTAL_HASH" ]; then
       git reset --hard
@@ -32,7 +32,7 @@ if [ $ret -ne 0 ]; then
   # If failed to fall back, report
   ret=$?
   if [ $ret -ne 0 ]; then
-    echo "\n\n\nCould not fall back. Deploy failed."
+    printf "\n\n\nCould not fall back. Deploy failed."
     exit 1
   fi
 fi
@@ -42,4 +42,4 @@ chown -R $USER:$USER "/var/www"
 
 ./scripts/hash.sh "/home/ubuntu/sd-ec2" > "/var/www/portal_hash.txt"
 
-echo "\n\n\nDeploy succeeded."
+printf "\n\n\nDeploy succeeded."
