@@ -5,6 +5,7 @@ LAST_PORTAL_HASH=$([ -r "/var/www/portal_hash.txt" ] && cat "/var/www/portal_has
 
 git config --global --add safe.directory "/home/ubuntu/sd-ec2"
 cd /home/ubuntu/sd-ec2
+git checkout main
 git reset --hard
 git pull
 find . -wholename "./scripts/*.sh" -exec chmod a+x {} \;
